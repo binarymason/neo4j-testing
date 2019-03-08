@@ -1,0 +1,22 @@
+# create constraint
+CREATE CONSTRAINT on(host:Host) ASSERT host.hostname IS UNIQUE
+
+# create nodes
+LOAD CSV FROM "file:///p2p-Gnutella09.txt" AS line
+FIELDTERMINATOR '\t'
+MERGE (h:Host { hostname: line[0] })
+RETURN h
+
+# create relationships
+LOAD CSV FROM "file:///p2p-Gnutella09.txt" AS line
+FIELDTERMINATOR '\t'
+MATCH (local:Host), (remote:Host)
+WHERE local.hostname = line[0] AND remote.hostname = line[1]
+CREATE (local)-[r:CONNECTED_TO]->(remote)
+RETURN type(r)
+
+match (h:Host) detach delete h
+
+MATCH (a)-[:CONNECTED_TO]->(b)
+RETURN b, COLLECT(a) as hosts
+ORDER BY SIZE(hosts) DESC LIMIT 1
